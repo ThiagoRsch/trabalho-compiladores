@@ -1,0 +1,173 @@
+#Options
+GenerateScanner = true
+GenerateParser = true
+Language = Java
+ScannerName = Lexico
+ParserName = Sintatico
+SemanticName = Semantico
+ScannerCaseSensitive = true
+ScannerTable = Compact
+Input = String
+Parser = LL
+#RegularDefinitions
+min : [a-z]
+digito : [0-9]
+under : _
+ponto : \.
+#Tokens
+identificador :! {min} ({min} | {under}{digito}+)*
+constante_int :! {digito}+
+constante_float :! {digito}+ {ponto} {digito}+
+constante_char :! \\ (n|s|t)
+constante_string :! \" ([^\n\"\\%] | %x)* \"
+
+// palavras reservadas
+pr_ask = identificador : "ask"
+pr_bool = identificador : "bool"
+pr_char = identificador : "char"
+pr_define = identificador : "define"
+pr_end = identificador : "end"
+pr_elif = identificador : "elif"
+pr_else = identificador : "else"
+pr_false = identificador : "false"
+pr_float = identificador : "float"
+pr_if = identificador : "if"
+pr_int = identificador : "int"
+pr_main = identificador : "main"
+pr_repeat = identificador : "repeat"
+pr_string = identificador : "string"
+pr_tell = identificador : "tell"
+pr_true = identificador : "true"
+pr_until = identificador : "until"
+pr_while = identificador : "while"
+
+// simbolos especiais
+":"
+";"
+","
+"="
+"<-"
+"("
+")"
+"&&"
+"||"
+"!"
+"=="
+"!="
+"<"
+"<="
+">"
+">="
+"+"
+"-"
+"*"
+"/"
+"^"
+
+// caracteres de formatacao
+:[\s\n\t]
+
+// comentarios
+:! # [^\n]*
+:! \{ \n [^\{\}]* \n \}
+#NonTerminals
+<programa>
+<opt_declaracao>
+<declaracao_variaveis>
+<lista_tipos>
+<lista_tipos_>
+<def_tipo>
+<tipo>
+<lista_identificadores>
+<lista_identificadores_>
+<lista_instrucoes>
+<lista_instrucoes_>
+<instrucao>
+<atribuicao>
+<atribuicao_>
+<entrada>
+<lista_entrada>
+<lista_entrada_>
+<item_entrada>
+<saida>
+<lista_expressoes>
+<lista_expressoes_>
+<selecao>
+<lista_elif>
+<opt_else>
+<repeticao>
+<repeticao_>
+<expressao>
+<expressao_>
+<termo_logico>
+<relacional>
+<relacional_>
+<operador_relacional>
+<aritmetica>
+<aritmetica_>
+<termo_aritmetico>
+<termo_aritmetico_>
+<fator>
+<fator_>
+<elemento>
+
+#Grammar
+<programa> ::= pr_main #20 <opt_declaracao> <lista_instrucoes> pr_end #21 ;
+<opt_declaracao> ::= <declaracao_variaveis> | î ;
+<declaracao_variaveis> ::= pr_define <lista_tipos> ;
+
+// <lista_tipos> ::= <def_tipo> | <def_tipo> <lista_tipos> ;
+<lista_tipos> ::= <def_tipo> <lista_tipos_> ;
+<lista_tipos_> ::= î | <lista_tipos> ;
+
+<def_tipo> ::= <tipo> #22 ":" <lista_identificadores> #23 ";" ;
+<tipo> ::= pr_bool | pr_char | pr_int | pr_float | pr_string ;
+
+// <lista_identificadores> ::= identificador | identificador "," <lista_identificadores> ;
+<lista_identificadores> ::= identificador #24 <lista_identificadores_> ;
+<lista_identificadores_> ::= î | "," <lista_identificadores> ;
+
+// <lista_instrucoes> ::= <instrucao> ";" | <instrucao> ";" <lista_instrucoes> ;
+<lista_instrucoes> ::= <instrucao> ";" <lista_instrucoes_> ;
+<lista_instrucoes_> ::= î | <lista_instrucoes> ;
+
+<instrucao> ::= <atribuicao> | <entrada> | <saida> | <selecao> | <repeticao> ;
+
+// <atribuicao> ::= <lista_identificadores> "=" <expressao> | <lista_identificadores> "<-" <expressao> ;
+<atribuicao> ::= <lista_identificadores> <atribuicao_> ;
+<atribuicao_> ::= "=" <expressao> #25 | "<-" <expressao> #25 ;
+
+<entrada> ::= pr_ask "(" <lista_entrada> ")" ;
+
+// <lista_entrada> ::= <item_entrada> | <item_entrada> "," <lista_entrada> ;
+<lista_entrada> ::= <item_entrada> <lista_entrada_> ;
+<lista_entrada_> ::= î | "," <lista_entrada> ;
+
+<item_entrada> ::= constante_string #19 #14 "," identificador #26 | identificador #26 ;
+<saida> ::= pr_tell "(" <lista_expressoes> ")" ;
+
+// <lista_expressoes> ::= <expressao> | <expressao> "," <lista_expressoes> ;
+<lista_expressoes> ::= <expressao> #14 <lista_expressoes_> ;
+<lista_expressoes_> ::= î | "," <lista_expressoes> ;
+
+<selecao> ::= pr_if <expressao> #27 <lista_instrucoes> <lista_elif> #28 <opt_else> pr_end #29 ;
+<lista_elif> ::= #28 pr_elif <expressao> #30 <lista_instrucoes> <lista_elif> | î ;
+<opt_else> ::= pr_else <lista_instrucoes> | î ;
+
+// <repeticao> ::= pr_repeat <lista_instrucoes> pr_while <expressao> | pr_repeat <lista_instrucoes> pr_until <expressao> ;
+<repeticao> ::= pr_repeat #32 <lista_instrucoes> <repeticao_> ;
+<repeticao_> ::= pr_while <expressao> #33 | pr_until <expressao> #34 ;
+
+<expressao> ::= <termo_logico> <expressao_> ;
+<expressao_> ::= î | "&&" <termo_logico> #15 <expressao_> | "||" <termo_logico> #16 <expressao_> ;
+<termo_logico> ::= <relacional> | pr_true #11 | pr_false #12 | "!" <termo_logico> #13 ;
+<relacional> ::= <aritmetica> <relacional_> ;
+<relacional_> ::= î | <operador_relacional> #9 <aritmetica> #10 ;
+<operador_relacional> ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+<aritmetica> ::= <termo_aritmetico> <aritmetica_> ;
+<aritmetica_> ::= î | "+" <termo_aritmetico> #1 <aritmetica_> | "-" <termo_aritmetico> #2 <aritmetica_> ;
+<termo_aritmetico> ::= <fator> <termo_aritmetico_> ;
+<termo_aritmetico_> ::= î | "*" <fator> #3 <termo_aritmetico_> | "/" <fator> #4 <termo_aritmetico_> ;
+<fator> ::= <elemento> <fator_> ;
+<fator_> ::= î | "^" <elemento> #17 <fator_> ;
+<elemento> ::= identificador #31 | constante_int #5 | constante_float #6 | constante_char #18 | constante_string #19 | "(" <expressao> ")" | "+" <elemento> #7 | "-" <elemento> #8 ;
